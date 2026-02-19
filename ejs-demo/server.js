@@ -9,7 +9,7 @@ app
   .use(express.urlencoded({extended: true})) // middleware to parse form data from incoming HTTP request and add form fields to req.body
   .use(express.static('static'))             // Allow server to serve static content such as images, stylesheets, fonts or frontend js from the directory named static
   .set('view engine', 'ejs')                 // Set EJS to be our templating engine
-  .set('views', 'view')   
+  .set('views', 'views')   
 
 // Use MongoDB
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
@@ -28,6 +28,9 @@ const client = new MongoClient(uri, {
 client.connect()
   .then(() => {
     console.log('Database connection established')
+
+    const db = client.db(process.env.DB_NAME);
+    collection = db.collection(process.env.DB_COLLECTION);
   })
   .catch((err) => {
     console.log(`Database connection error - ${err}`)
@@ -55,27 +58,22 @@ function showForm(req, res) {
   res.render('pages/formulier')
 }
 
-function verwerkForm(req, res) {
+async function verwerkForm(req, res) {
   const naamInput = req.body.name;
-  const gebruikerGevonden = users.find(x => x.name === req.body.name)
- 
-  if (gebruikerGevonden) {
-    console.log('Gebruiker gevonden:', gebruikerGevonden);
-
-    if (gebruikerGevonden && gebruikerGevonden.wachtwoord === req.body.wachtwoord) {
-      console.log('Login successful!')
-      res.render('pages/index');
-    } else {
-      console.log('Invalid username or password')
-      res.render('pages/formulier')
-
-    }
-  } else {
-    console.log('Gebruiker niet gevonden');
-    res.render('pages/formulier')
-
-  }
-}
+  const wachtwoordInput = req.body.wachtwoord;
+  
+   {
+    const gebruikerGevonden = await collection.findOne({
+      username: naamInput, 
+      wachtwoord:wachtwoordInput
+    });
+  
+    if (gebruikerGevonden) {
+      return res.render('pages/formulier')}
+    
+    return res.render('pages/submitted')
+  
+  } }
 
 app.listen(8080);
 console.log('Server is listening on port 8080');
